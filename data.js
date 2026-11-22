@@ -5,14 +5,14 @@ const WORDS = {
   // krótkie (3–4 litery)
   1: ['kot', 'dom', 'las', 'lis', 'nos', 'oko', 'ser', 'sok', 'rak', 'mak', 'lok', 'bok', 'rok', 'kos',
     'koc', 'noc', 'moc', 'lew', 'lek', 'lot', 'mama', 'tata', 'lala', 'woda', 'noga', 'ryba', 'kura',
-    'koza', 'kosa', 'rosa', 'sowa', 'sofa', 'mapa', 'łapa', 'buda', 'buty', 'nuty', 'okno', 'słoń'],
+    'koza', 'kosa', 'rosa', 'sowa', 'sofa', 'mapa', 'łapa', 'buda', 'buty', 'nuty', 'okno', 'słoń', 'ręka'],
   // średnie (5–6 liter)
   2: ['domek', 'kotek', 'balon', 'baran', 'banan', 'rower', 'robot', 'ekran', 'ogród', 'zamek', 'zegar',
     'zebra', 'żabka', 'lampa', 'lalka', 'ławka', 'łapka', 'mleko', 'motyl', 'morze', 'pilot', 'piłka',
-    'rybka', 'rzeka', 'ręka', 'szafa', 'szkoła', 'słowo', 'słoma', 'trawa', 'kredka', 'kratka', 'kwiat',
+    'rybka', 'rzeka', 'papuga', 'szafa', 'szkoła', 'słowo', 'słoma', 'trawa', 'kredka', 'kratka', 'kwiat',
     'świat', 'świnka', 'śliwka', 'malina', 'maluch'],
   // długie (7+ liter)
-  3: ['samolot', 'samochód', 'parasol', 'papuga', 'pomidor', 'pomarańcza', 'telefon', 'telewizor',
+  3: ['samolot', 'samochód', 'parasol', 'policjant', 'pomidor', 'pomarańcza', 'telefon', 'telewizor',
     'czekolada', 'biedronka', 'księżyc', 'książka', 'komputer', 'kapelusz', 'kanapka', 'truskawka',
     'tornister', 'motylek', 'marchewka', 'dinozaur', 'delfinek', 'krokodyl', 'królewna', 'wiewiórka',
     'wieloryb', 'hulajnoga', 'huśtawka', 'tramwaj', 'rakieta', 'rodzina'],
@@ -34,10 +34,13 @@ const SYLLABLES = [
   ['🦒', ['ży', 'ra', 'fa']], ['🚀', ['ra', 'kie', 'ta']], ['🎸', ['gi', 'ta', 'ra']],
   ['🥒', ['o', 'gó', 'rek']], ['🌻', ['sło', 'necz', 'nik']],
   ['🍫', ['cze', 'ko', 'la', 'da']], ['🛴', ['hu', 'laj', 'no', 'ga']], ['📺', ['te', 'le', 'wi', 'zor']],
-  ['🦖', ['di', 'no', 'za', 'ur']], ['🚂', ['lo', 'ko', 'mo', 'ty', 'wa']],
+  ['🦖', ['di', 'no', 'zaur']], ['🚂', ['lo', 'ko', 'mo', 'ty', 'wa']],
   ['🦛', ['hi', 'po', 'po', 'tam']], ['🐛', ['gą', 'sie', 'ni', 'ca']], ['🚁', ['he', 'li', 'kop', 'ter']],
   ['🍊', ['po', 'ma', 'rań', 'cza']], ['🦏', ['no', 'so', 'ro', 'żec']], ['🧑‍🚀', ['as', 'tro', 'nau', 'ta']],
   ['🦄', ['jed', 'no', 'ro', 'żec']], ['🏎️', ['wy', 'ści', 'gów', 'ka']],
+  ['🌽', ['ku', 'ku', 'ry', 'dza']], ['🎠', ['ka', 'ru', 'ze', 'la']], ['🍇', ['wi', 'no', 'gro', 'na']],
+  ['🥑', ['a', 'wo', 'ka', 'do']], ['🍀', ['ko', 'ni', 'czy', 'na']], ['🍳', ['ja', 'jecz', 'ni', 'ca']],
+  ['🐙', ['oś', 'mior', 'ni', 'ca']], ['🏀', ['ko', 'szy', 'ków', 'ka']],
 ];
 
 // Wyrażenia do gry Błysk. W każdej grupie są podobne do siebie – jedno miga, reszta to zmyłki.
@@ -50,19 +53,33 @@ const PHRASES = {
     ['stary zamek', 'stary zegar', 'szary zamek', 'stary zakręt'],
     ['biała chmura', 'biała kreda', 'mała chmura', 'biała chata'],
     ['dobry kolega', 'drogi kolega', 'dobry kolarz', 'dobra kolacja'],
-    ['wesoły piesek', 'wesoły pajac', 'wysoki piasek', 'wesoły spacer'],
+    ['wesoły piesek', 'wesoły pajac', 'wąski pasek', 'wesoły spacer'],
     ['krótka bajka', 'krótka bluzka', 'gorzka bajka', 'krótka lekcja'],
+    ['nowy zeszyt', 'nowy zegar', 'mały zeszyt', 'nowy zestaw'],
+    ['czarny kot', 'czarny koc', 'czarny kos', 'czysty koc'],
+    ['słodki sok', 'słodki ser', 'słony ser', 'zimny sok'],
+    ['długa droga', 'długa deska', 'druga droga', 'długa noga'],
+    ['ciężki plecak', 'ciężki plaster', 'ciemny plecak', 'ciężki placek'],
+    ['głośna muzyka', 'głośna mucha', 'główna muzyka', 'głośna mowa'],
+    ['pusta szklanka', 'pusta szufla', 'prosta szklanka', 'pusta skrzynka'],
   ],
   3: [
     ['kot pije mleko', 'kot lubi mleko', 'kot pije wodę', 'koń pije mleko'],
     ['pies goni kota', 'pies goni koła', 'pies gryzie kość', 'kot goni psa'],
     ['mama piecze ciasto', 'mama kroi ciasto', 'mama piecze chleb', 'babcia piecze ciasto'],
-    ['tata czyta gazetę', 'tata czyta książkę', 'tata kupił gazetę', 'Tomek czyta gazetę'],
+    ['tata czyta gazetę', 'tata czyta książkę', 'tata kupił gazetę', 'dziadek czyta gazetę'],
     ['ptak śpiewa rano', 'ptak śpiewa ładnie', 'ptak lata rano', 'rak śpiewa rano'],
     ['pada drobny deszcz', 'pada gęsty deszcz', 'pada drobny śnieg', 'spada drobny deszcz'],
     ['Ola rysuje dom', 'Ola rysuje kota', 'Ala rysuje dom', 'Ola maluje dom'],
     ['statek płynie szybko', 'statek płynie daleko', 'stateczek płynie szybko', 'samolot leci szybko'],
-    ['słońce mocno grzeje', 'słońce mocno świeci', 'słonko mocno grzeje', 'słońce jasno grzeje'],
+    ['babcia robi obiad', 'babcia robi sweter', 'babcia je obiad', 'ciocia robi obiad'],
+    ['chłopiec kopie piłkę', 'chłopiec łapie piłkę', 'chłopiec kopie dołek', 'chłopak kopie piłkę'],
+    ['zając skacze wysoko', 'zając skacze daleko', 'zając biegnie wysoko', 'żaba skacze wysoko'],
+    ['wujek naprawia rower', 'wujek naprawia zegar', 'wujek kupuje rower', 'dziadek naprawia rower'],
+    ['dzieci lepią bałwana', 'dzieci lubią bałwana', 'dzieci lepią pierogi', 'dziewczynki lepią bałwana'],
+    ['wiatr porwał czapkę', 'wiatr porwał kartkę', 'wiatr zerwał czapkę', 'wilk porwał czapkę'],
+    ['koń biegnie łąką', 'koń biegnie drogą', 'koń biega łąką', 'kot biegnie łąką'],
+    ['słońce mocno grzeje', 'słońce mocno świeci', 'słonko mocno grzeje', 'słońce słabo grzeje'],
   ],
 };
 
@@ -70,7 +87,7 @@ const PHRASES = {
 const STORIES = [
   {
     text: 'Księżyc krąży wokół Ziemi i potrzebuje na jedno okrążenie około dwudziestu siedmiu dni. Nie świeci własnym światłem, tylko odbija światło Słońca. Na Księżycu nie ma powietrza ani wiatru, dlatego ślady astronautów sprzed ponad pięćdziesięciu lat wciąż są tam widoczne. Pierwszy człowiek stanął na Księżycu w tysiąc dziewięćset sześćdziesiątym dziewiątym roku. Nazywał się Neil Armstrong.',
-    q: [['Dlaczego Księżyc świeci?', ['odbija światło Słońca', 'ma własne światło', 'odbija światło gwiazd']],
+    q: [['Dlaczego Księżyc świeci?', ['bo odbija światło Słońca', 'bo ma własne światło', 'bo płonie na nim ogień']],
       ['Dlaczego ślady astronautów wciąż widać?', ['bo nie ma tam wiatru', 'bo są z betonu', 'bo ktoś je odnawia']],
       ['Kto pierwszy stanął na Księżycu?', ['Neil Armstrong', 'Jurij Gagarin', 'Mikołaj Kopernik']]],
   },

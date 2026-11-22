@@ -27,7 +27,7 @@ body {
   max-width: 760px;
   min-height: 100%;
   margin: 0 auto;
-  padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
 }
@@ -174,13 +174,19 @@ h2 { margin: 18px 0 10px; font-size: 1.15rem; color: var(--main-dark); text-tran
 }
 .flash.emoji { font-size: 6rem; min-height: 190px; }
 .flash.digits { letter-spacing: .15em; font-variant-numeric: tabular-nums; }
+.flash.typing { min-height: 84px; }
+/* pojedyncze słowa czytanki i całe wyrażenia muszą się mieścić w jednej linii także na telefonie */
+.flash.read { font-size: clamp(1.5rem, 7vw, 3.5rem); letter-spacing: 0; }
+.flash.phrase { font-size: clamp(1.15rem, 5.6vw, 3rem); white-space: nowrap; letter-spacing: 0; }
 .flash.good { color: var(--good); }
 .flash.wrong { color: var(--bad); }
 
 .pic { font-size: 6rem; line-height: 1; }
 .row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; font-size: clamp(2.6rem, 11vw, 4rem); min-height: 1.4em; }
 
-.options { display: grid; gap: 12px; width: 100%; grid-template-columns: 1fr 1fr; }
+.options { display: grid; gap: 12px; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.options.words .opt { font-size: clamp(1.1rem, 5.2vw, 1.5rem); padding: 12px 8px; }
+.options.list { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); }
 .options.answers { grid-template-columns: 1fr; max-width: 460px; }
 .options.syl, .options.emo { display: flex; flex-wrap: wrap; justify-content: center; }
 .opt {
@@ -195,7 +201,7 @@ h2 { margin: 18px 0 10px; font-size: 1.15rem; color: var(--main-dark); text-tran
 }
 .opt:active { transform: translateY(3px); box-shadow: 0 2px 0 #dcd4ff; }
 .opt:disabled { cursor: default; }
-.opt.good { background: var(--good); color: #fff; box-shadow: 0 5px 0 #17824e; }
+.opt.good { background: #17824e; color: #fff; box-shadow: 0 5px 0 #0f5f38; }
 .opt.wrong { background: var(--bad); color: #fff; box-shadow: 0 5px 0 #b93545; }
 .opt.used { visibility: hidden; }
 .options.emo .opt { font-size: 2.4rem; min-width: 76px; }
@@ -224,9 +230,13 @@ h2 { margin: 18px 0 10px; font-size: 1.15rem; color: var(--main-dark); text-tran
 
 .pad { display: grid; grid-template-columns: repeat(3, 76px); gap: 10px; justify-content: center; }
 .pad .opt:last-child { grid-column: 2; }
+@media (max-height: 700px) {
+  .pad { gap: 8px; }
+  .pad .opt { min-height: 50px; }
+}
 
 /* karty do gry w pary */
-.grid { display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: 10px; width: 100%; max-width: 560px; }
+.grid { display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: 10px; width: 100%; max-width: min(560px, max(260px, calc(100vh - 200px))); max-width: min(560px, max(260px, calc(100dvh - 200px))); }
 .card {
   aspect-ratio: 1;
   border-radius: 16px;
@@ -247,15 +257,15 @@ h2 { margin: 18px 0 10px; font-size: 1.15rem; color: var(--main-dark); text-tran
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 8rem;
+  font-size: 8.8rem;
   pointer-events: none;
   animation: pop .75s both;
 }
 @keyframes pop {
   0% { transform: scale(.3); opacity: 0; }
-  30% { transform: scale(1.1); opacity: 1; }
-  80% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(1); opacity: 0; }
+  30% { transform: scale(1); opacity: 1; }
+  80% { transform: scale(.91); opacity: 1; }
+  100% { transform: scale(.91); opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -276,10 +286,10 @@ h2 { margin: 18px 0 10px; font-size: 1.15rem; color: var(--main-dark); text-tran
   color: var(--ink);
 }
 .addplayer .big { min-width: 0; }
-.link { background: none; padding: 0; color: var(--main-dark); font-weight: 700; text-decoration: underline; }
+.link { display: inline-block; min-height: 44px; padding: 10px 14px; margin-top: 6px; border-radius: 999px; background: var(--card); box-shadow: 0 3px 0 #e1dbff; color: var(--main-dark); font-weight: 700; }
 
 /* ---------- tablica liczb ---------- */
-.grid.cells { max-width: 440px; gap: 6px; }
+.grid.cells { max-width: min(440px, max(250px, calc(100vh - 250px))); max-width: min(440px, max(250px, calc(100dvh - 250px))); gap: 6px; }
 .cell {
   aspect-ratio: 1;
   padding: 0;

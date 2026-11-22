@@ -20,7 +20,21 @@ na telefonie, tablecie i komputerze. Nie wymaga instalacji, konta ani internetu 
 - 🔟 **Liczby** – zapamiętywanie coraz dłuższych liczb.
 
 Każda gra ma 6 poziomów. Poziom rośnie sam po dobrym wyniku i spada, gdy jest za trudno;
-można go też ustawić ręcznie przed startem. Gwiazdki i poziomy zapisują się na urządzeniu.
+można go też ustawić ręcznie przed startem. Gwiazdki i poziomy zapisują się na urządzeniu
+(osobno na każdym telefonie czy tablecie).
+
+Na iPhonie i iPadzie dodaj aplikację do ekranu początkowego (Udostępnij → Do ekranu początkowego)
+i uruchamiaj ją z ikony. Safari kasuje dane stron nieotwieranych przez 7 dni, więc bez tego
+gwiazdki i poziomy mogą zniknąć.
+
+Wymagania: Safari/iOS 15.4, Chrome/Edge 92, Firefox 90 lub nowsze.
+
+## Publikacja (GitHub Pages)
+
+1. Repozytorium musi być publiczne (Settings → General → Danger Zone → Change visibility),
+   chyba że konto ma płatny plan GitHub.
+2. Settings → Pages → Source: „Deploy from a branch” → wybierz gałąź i folder `/ (root)` → Save.
+3. Po 1–2 minutach aplikacja jest pod adresem `https://<użytkownik>.github.io/Nauka/`.
 
 ## Uruchomienie
 

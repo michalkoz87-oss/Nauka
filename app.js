@@ -51,6 +51,7 @@ function tone(freqs, dur = 0.13) {
   if (state.mute) return;
   try {
     ac ??= new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state !== 'running') ac.resume().catch(() => {});
     let t = ac.currentTime;
     for (const f of freqs) {
       const o = ac.createOscillator();
@@ -67,6 +68,11 @@ function tone(freqs, dur = 0.13) {
   } catch { /* brak dźwięku nie przeszkadza w grze */ }
 }
 
+// iOS odtwarza dźwięk dopiero po „odblokowaniu” go dotknięciem ekranu
+addEventListener('pointerdown', () => {
+  if (ac && ac.state !== 'running') ac.resume().catch(() => {});
+}, { passive: true });
+
 /* ---------- gry ---------- */
 
 // Błysk: słowo pojawia się na chwilę, potem trzeba je wskazać.
@@ -81,7 +87,7 @@ async function flashWords(ctx) {
   for (let i = 0; i < targets.length; i++) {
     ctx.progress(i, targets.length);
     const word = targets[i];
-    const box = h('div', { class: 'flash' }, '+');
+    const box = h('div', { class: groups ? 'flash phrase' : 'flash' }, '+');
     ctx.stage.replaceChildren(h('p', { class: 'hint' }, 'Patrz uważnie…'), box);
     await ctx.sleep(700);
     box.textContent = word;
@@ -93,7 +99,7 @@ async function flashWords(ctx) {
       if (await ctx.ask(shuffle(groups[i]), word, 'answers')) score++;
       continue;
     }
-    const sim = (w) => (w[0] === word[0] ? 2 : 0) + (w.at(-1) === word.at(-1) ? 1 : 0) - Math.abs(w.length - word.length);
+    const sim = (w) => (w[0] === word[0] ? 2 : 0) + (w[w.length - 1] === word[word.length - 1] ? 1 : 0) - Math.abs(w.length - word.length);
     const near = pool.filter((w) => w !== word).sort((a, b) => sim(b) - sim(a)).slice(0, 6);
     ctx.stage.replaceChildren(h('p', { class: 'hint' }, 'Jakie to było słowo?'));
     if (await ctx.ask(shuffle([word, ...sample(near, 3)]), word, 'words')) score++;
@@ -104,7 +110,7 @@ async function flashWords(ctx) {
 // Sylaby: ułóż słowo z rozsypanych sylab.
 async function syllables(ctx) {
   const L = ctx.level;
-  const lens = L <= 2 ? [3] : [4, 5];
+  const lens = [[2, 3], [2, 3], [3, 4], [3, 4], [4, 5], [4, 5]][L - 1];
   const extra = [1, 3, 1, 3, 5, 5][L - 1];
   const items = sample(SYLLABLES.filter((s) => lens.includes(s[1].length)), 6);
   const allSyl = [...new Set(SYLLABLES.flatMap((s) => s[1]))];
@@ -152,7 +158,8 @@ async function syllables(ctx) {
 // Czytanie na czas: tekst słowo po słowie, potem pytania.
 async function speedRead(ctx) {
   const wpm = [90, 120, 150, 190, 240, 300][ctx.level - 1];
-  const stories = sample(STORIES, 2);
+  // jedna krótsza i jedna dłuższa czytanka: zawsze 5 pytań, więc jedna pomyłka nie blokuje awansu
+  const stories = shuffle([2, 3].map((k) => sample(STORIES.filter((st) => st.q.length === k), 1)[0]));
   let score = 0;
   let total = 0;
   let step = 0;
@@ -170,11 +177,13 @@ async function speedRead(ctx) {
     ctx.stage.replaceChildren(box, bar);
     await ctx.sleep(600);
     const words = story.text.split(' ');
+    // dłuższe pauzy po przecinkach i kropkach są wliczone w tempo, żeby zgadzało się z podanym
+    const weight = (w) => (/[.!?]$/.test(w) ? 1.8 : /,$/.test(w) ? 1.3 : 1);
+    const base = (60000 / wpm) * (words.length / words.reduce((sum, w) => sum + weight(w), 0));
     for (let i = 0; i < words.length; i++) {
       box.textContent = words[i];
       bar.firstChild.style.width = `${((i + 1) / words.length) * 100}%`;
-      const base = 60000 / wpm;
-      await ctx.sleep(base * (/[.!?]$/.test(words[i]) ? 1.8 : /,$/.test(words[i]) ? 1.3 : 1));
+      await ctx.sleep(base * weight(words[i]));
     }
     for (const [question, answers] of story.q) {
       ctx.progress(step++, steps);
@@ -232,7 +241,7 @@ async function pairs(ctx) {
     });
   });
   await ctx.sleep(500);
-  const ratio = moves <= n * 1.7 ? 1 : moves <= n * 2.5 ? 0.7 : 0.45;
+  const ratio = moves <= n * 2 ? 1 : moves <= n * 3 ? 0.7 : moves <= n * 4 ? 0.45 : 0.3;
   return { ratio, text: `Wszystkie pary w ${moves} ruchach` };
 }
 
@@ -326,14 +335,28 @@ async function numbers(ctx) {
     ctx.stage.firstChild.textContent = 'Wpisz liczbę';
     const pad = h('div', { class: 'pad' });
     ctx.stage.append(pad);
+    box.classList.add('typing');
     let typed = '';
+    let timer;
     await new Promise((done) => {
       const press = (k) => {
         if (k === '⌫') typed = typed.slice(0, -1);
         else if (typed.length < len) typed += k;
         box.textContent = typed;
-        if (typed.length === len) done();
+        // chwila na poprawienie ostatniej cyfry, zanim odpowiedź zostanie sprawdzona
+        clearTimeout(timer);
+        if (typed.length === len) timer = setTimeout(done, 600);
       };
+      // na komputerze można pisać z klawiatury
+      const onKey = (e) => {
+        if (!pad.isConnected) return document.removeEventListener('keydown', onKey);
+        if (/^[0-9]$/.test(e.key)) press(e.key);
+        else if (e.key === 'Backspace') {
+          e.preventDefault();
+          press('⌫');
+        }
+      };
+      document.addEventListener('keydown', onKey);
       for (const k of ['1', '2', '3', '4', '5', '6', '7', '8', '9', '⌫', '0']) {
         pad.append(h('button', { class: 'opt', onclick: () => press(k) }, k));
       }
@@ -344,7 +367,7 @@ async function numbers(ctx) {
     if (ok) score++;
     else ctx.stage.firstChild.textContent = `Było: ${num}`;
     await ctx.feedback(ok);
-    if (!ok) await ctx.sleep(1200);
+    if (!ok) await ctx.sleep(2000);
   }
   return { ratio: score / rounds, text: `Zapamiętane liczby (cyfr: ${len}): ${score} z ${rounds}` };
 }
@@ -382,10 +405,11 @@ async function numberGrid(ctx) {
     }
   });
   const t = (performance.now() - t0) / 1000 + slips; // każda pomyłka to sekunda kary
-  const target = n * perCell;
-  const ratio = t <= target ? 1 : t <= target * 1.5 ? 0.7 : 0.45;
+  const target = Math.round(n * perCell);
+  const ratio = t <= target ? 1 : t <= target * 1.5 ? 0.7 : t <= target * 2.5 ? 0.45 : 0.3;
   await ctx.feedback(ratio === 1);
-  return { ratio, text: `Twój czas: ${t.toFixed(1).replace('.', ',')} s (cel: ${Math.round(target)} s)` };
+  const penalty = slips ? `, w tym ${slips} s kary za pomyłki` : '';
+  return { ratio, text: `Twój czas: ${t.toFixed(1).replace('.', ',')} s${penalty} (cel: ${target} s)` };
 }
 
 // Lista słów: zapamiętaj listę, potem zaznacz słowa, które na niej były.
@@ -393,18 +417,19 @@ async function wordList(ctx) {
   const n = ctx.level + 3;
   const rounds = 3;
   const pool = [...WORDS[1], ...WORDS[2]];
+  const deck = shuffle(pool); // każde słowo najwyżej raz w całej sesji
   let points = 0;
   for (let r = 0; r < rounds; r++) {
     ctx.progress(r, rounds);
-    const words = sample(pool, n * 2);
+    const words = deck.slice(r * n * 2, (r + 1) * n * 2);
     const targets = new Set(words.slice(0, n));
     ctx.stage.replaceChildren(
       h('p', { class: 'hint' }, 'Zapamiętaj te słowa! Możesz ułożyć z nich w głowie historyjkę.'),
       h('div', { class: 'chips' }, [...targets].map((w) => h('span', null, w))));
     await ctx.sleep(2000 + n * 1500);
-    const tiles = h('div', { class: 'options' });
+    const tiles = h('div', { class: 'options list' });
     const check = h('button', { class: 'big' }, 'Sprawdź');
-    ctx.stage.replaceChildren(h('p', { class: 'hint' }, `Zaznacz ${n} słów, które były na liście.`), tiles, check);
+    ctx.stage.replaceChildren(h('p', { class: 'hint' }, `Zaznacz ${n} ${n < 5 ? 'słowa' : 'słów'}, które były na liście.`), tiles, check);
     for (const w of shuffle(words)) {
       tiles.append(h('button', { class: 'opt small', onclick: (e) => e.currentTarget.classList.toggle('sel') }, w));
     }
@@ -452,9 +477,12 @@ function who() {
     e.preventDefault();
     const name = input.value.trim();
     if (!name) return;
-    state.players.push({ name, stars: 0, games: {} });
-    state.active = state.players.length - 1;
+    const same = state.players.findIndex((p) => p.name.toLowerCase() === name.toLowerCase());
+    if (same < 0) state.players.push({ name, stars: 0, games: {} });
+    state.active = same < 0 ? state.players.length - 1 : same;
     save();
+    // prośba do przeglądarki, żeby nie kasowała zapisanych postępów
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
     home();
   };
   app.replaceChildren(
@@ -467,7 +495,7 @@ function who() {
           class: 'icon',
           'aria-label': `Usuń gracza ${p.name}`,
           onclick: () => {
-            if (!confirm(`Usunąć gracza ${p.name} i wszystkie jego gwiazdki?`)) return;
+            if (!confirm(`Usunąć profil „${p.name}” i wszystkie zebrane gwiazdki?`)) return;
             state.players.splice(i, 1);
             state.active = -1;
             save();
@@ -516,9 +544,12 @@ function gameHeader(g, extra) {
 
 function intro(g) {
   current = null;
+  // wpis w historii, żeby systemowy przycisk „wstecz” wracał do menu, a nie zamykał aplikację
+  if (!history.state) history.pushState(1, '');
   const s = gs(g.id);
   const setLevel = (d) => {
     s.level = Math.min(MAX_LEVEL, Math.max(1, s.level + d));
+    s.best = 0; // gwiazdki na kafelku dotyczą bieżącego poziomu
     save();
     intro(g);
   };
@@ -541,6 +572,12 @@ async function play(g) {
   const bar = h('div', { class: 'progress' }, h('i'));
   const stage = h('div', { class: 'stage' });
   app.replaceChildren(gameHeader(g, h('span', { class: 'stars' }, `Poziom ${s.level}`)), bar, stage);
+  // drugie stuknięcie z podwójnego kliknięcia w „Start” nie może trafić w grę
+  stage.style.pointerEvents = 'none';
+  setTimeout(() => (stage.style.pointerEvents = ''), 400);
+  // ekran nie gaśnie w trakcie gry (np. podczas czytania bez dotykania ekranu)
+  let wakeLock = null;
+  if ('wakeLock' in navigator) navigator.wakeLock.request('screen').then((l) => (wakeLock = l), () => {});
 
   const sleep = (ms) => new Promise((res, rej) => setTimeout(() => (current === token ? res() : rej(CANCEL)), ms));
   const ctx = {
@@ -569,7 +606,7 @@ async function play(g) {
       const ok = picked.textContent === correct;
       if (!ok) picked.classList.add('wrong');
       await ctx.feedback(ok);
-      if (!ok) await sleep(700);
+      if (!ok) await sleep(2000); // czas, żeby zobaczyć poprawną odpowiedź
       return ok;
     },
   };
@@ -580,6 +617,8 @@ async function play(g) {
   } catch (e) {
     if (e === CANCEL) return;
     throw e;
+  } finally {
+    if (wakeLock) wakeLock.release().catch(() => {});
   }
   if (current !== token) return;
 
@@ -588,7 +627,7 @@ async function play(g) {
   if (result.ratio >= 0.8) s.level = Math.min(MAX_LEVEL, s.level + 1);
   else if (result.ratio < 0.4) s.level = Math.max(1, s.level - 1);
   s.plays++;
-  s.best = Math.max(s.best, stars);
+  s.best = s.level !== before ? 0 : Math.max(s.best, stars);
   me().stars += stars;
   save();
   if (stars) tone([523, 659, 784, 1047], 0.16);
@@ -596,7 +635,8 @@ async function play(g) {
   const note = s.level > before ? `Brawo! Wskakujesz na poziom ${s.level}! 🚀`
     : s.level < before ? `Spróbujmy trochę łatwiej – poziom ${s.level}.`
       : stars === 3 && before === MAX_LEVEL ? 'Mistrzostwo! To najwyższy poziom! 🏆'
-        : 'Ćwicz dalej, idzie Ci coraz lepiej!';
+        : stars === 0 ? 'Nie poddawaj się – spróbuj jeszcze raz!'
+          : 'Ćwicz dalej, idzie Ci coraz lepiej!';
   app.replaceChildren(
     gameHeader(g),
     h('div', { class: 'panel' },
@@ -608,7 +648,10 @@ async function play(g) {
   );
 }
 
-home();
+// gdy graczy jest więcej, zaczynamy od pytania „kto gra?”, żeby nie grać na cudzym profilu
+if (state.players.length > 1) who();
+else home();
+addEventListener('popstate', home);
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
