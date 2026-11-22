@@ -1,0 +1,12 @@
+{
+  "name": "Mądra Sowa – szybkie czytanie i pamięć",
+  "short_name": "Mądra Sowa",
+  "lang": "pl",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f1ff",
+  "theme_color": "#6c4cf1",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
