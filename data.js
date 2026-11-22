@@ -35,10 +35,87 @@ const SYLLABLES = [
   ['🥒', ['o', 'gó', 'rek']], ['🌻', ['sło', 'necz', 'nik']],
   ['🍫', ['cze', 'ko', 'la', 'da']], ['🛴', ['hu', 'laj', 'no', 'ga']], ['📺', ['te', 'le', 'wi', 'zor']],
   ['🦖', ['di', 'no', 'za', 'ur']], ['🚂', ['lo', 'ko', 'mo', 'ty', 'wa']],
+  ['🦛', ['hi', 'po', 'po', 'tam']], ['🐛', ['gą', 'sie', 'ni', 'ca']], ['🚁', ['he', 'li', 'kop', 'ter']],
+  ['🍊', ['po', 'ma', 'rań', 'cza']], ['🦏', ['no', 'so', 'ro', 'żec']], ['🧑‍🚀', ['as', 'tro', 'nau', 'ta']],
+  ['🦄', ['jed', 'no', 'ro', 'żec']], ['🏎️', ['wy', 'ści', 'gów', 'ka']],
 ];
+
+// Wyrażenia do gry Błysk. W każdej grupie są podobne do siebie – jedno miga, reszta to zmyłki.
+const PHRASES = {
+  2: [
+    ['zielona żaba', 'zielona trawa', 'zielona ławka', 'zimowa zabawa'],
+    ['mały kotek', 'mały domek', 'miły kotek', 'mały kołek'],
+    ['szybki pociąg', 'szybki pojazd', 'długi pociąg', 'szybki pościg'],
+    ['ciepła zupa', 'ciepła kurtka', 'ciemna zupa', 'ciepła zima'],
+    ['stary zamek', 'stary zegar', 'szary zamek', 'stary zakręt'],
+    ['biała chmura', 'biała kreda', 'mała chmura', 'biała chata'],
+    ['dobry kolega', 'drogi kolega', 'dobry kolarz', 'dobra kolacja'],
+    ['wesoły piesek', 'wesoły pajac', 'wysoki piasek', 'wesoły spacer'],
+    ['krótka bajka', 'krótka bluzka', 'gorzka bajka', 'krótka lekcja'],
+  ],
+  3: [
+    ['kot pije mleko', 'kot lubi mleko', 'kot pije wodę', 'koń pije mleko'],
+    ['pies goni kota', 'pies goni koła', 'pies gryzie kość', 'kot goni psa'],
+    ['mama piecze ciasto', 'mama kroi ciasto', 'mama piecze chleb', 'babcia piecze ciasto'],
+    ['tata czyta gazetę', 'tata czyta książkę', 'tata kupił gazetę', 'Tomek czyta gazetę'],
+    ['ptak śpiewa rano', 'ptak śpiewa ładnie', 'ptak lata rano', 'rak śpiewa rano'],
+    ['pada drobny deszcz', 'pada gęsty deszcz', 'pada drobny śnieg', 'spada drobny deszcz'],
+    ['Ola rysuje dom', 'Ola rysuje kota', 'Ala rysuje dom', 'Ola maluje dom'],
+    ['statek płynie szybko', 'statek płynie daleko', 'stateczek płynie szybko', 'samolot leci szybko'],
+    ['słońce mocno grzeje', 'słońce mocno świeci', 'słonko mocno grzeje', 'słońce jasno grzeje'],
+  ],
+};
 
 // Czytanki: tekst + pytania. Pierwsza odpowiedź jest zawsze poprawna (gra je miesza).
 const STORIES = [
+  {
+    text: 'Księżyc krąży wokół Ziemi i potrzebuje na jedno okrążenie około dwudziestu siedmiu dni. Nie świeci własnym światłem, tylko odbija światło Słońca. Na Księżycu nie ma powietrza ani wiatru, dlatego ślady astronautów sprzed ponad pięćdziesięciu lat wciąż są tam widoczne. Pierwszy człowiek stanął na Księżycu w tysiąc dziewięćset sześćdziesiątym dziewiątym roku. Nazywał się Neil Armstrong.',
+    q: [['Dlaczego Księżyc świeci?', ['odbija światło Słońca', 'ma własne światło', 'odbija światło gwiazd']],
+      ['Dlaczego ślady astronautów wciąż widać?', ['bo nie ma tam wiatru', 'bo są z betonu', 'bo ktoś je odnawia']],
+      ['Kto pierwszy stanął na Księżycu?', ['Neil Armstrong', 'Jurij Gagarin', 'Mikołaj Kopernik']]],
+  },
+  {
+    text: 'Ośmiornica to jedno z najmądrzejszych zwierząt w oceanie. Ma osiem ramion, trzy serca i niebieską krew. Potrafi zmieniać kolor skóry, żeby ukryć się przed wrogiem. Kiedy jest w niebezpieczeństwie, wypuszcza chmurę ciemnego atramentu i szybko ucieka. Ośmiornice umieją nawet odkręcać słoiki, żeby dostać się do jedzenia.',
+    q: [['Ile serc ma ośmiornica?', ['trzy', 'jedno', 'osiem']],
+      ['Jakiego koloru jest jej krew?', ['niebieska', 'czerwona', 'zielona']],
+      ['Co robi w niebezpieczeństwie?', ['wypuszcza atrament', 'udaje martwą', 'zakopuje się w piasku']]],
+  },
+  {
+    text: 'Maja znalazła na strychu starą mapę. Czerwony krzyżyk był narysowany obok dębu w ogrodzie dziadka. Razem z bratem Antkiem wzięli łopatę i zaczęli kopać. Po godzinie łopata uderzyła w coś twardego. Była to metalowa skrzynka, a w niej stare monety, zdjęcie i list. List napisał ich dziadek, kiedy sam miał dziesięć lat.',
+    q: [['Gdzie Maja znalazła mapę?', ['na strychu', 'w piwnicy', 'w bibliotece']],
+      ['Obok jakiego drzewa był krzyżyk?', ['obok dębu', 'obok jabłoni', 'obok brzozy']],
+      ['Kto napisał list ze skrzynki?', ['dziadek', 'pirat', 'sąsiad']]],
+  },
+  {
+    text: 'Mrówki żyją w wielkich rodzinach, które nazywamy koloniami. Każda mrówka ma swoje zadanie: jedne opiekują się jajami, inne szukają jedzenia, a jeszcze inne bronią mrowiska. Mrówka potrafi unieść ciężar wiele razy większy niż jej własna waga. Drogę do domu znajduje dzięki zapachowym śladom, które zostawiają jej siostry.',
+    q: [['Jak nazywa się rodzina mrówek?', ['kolonia', 'stado', 'ławica']],
+      ['Jak mrówki znajdują drogę do domu?', ['po zapachowych śladach', 'patrząc na gwiazdy', 'licząc kroki']],
+      ['Ile potrafi unieść mrówka?', ['wiele razy więcej, niż sama waży', 'tyle, ile sama waży', 'prawie nic']]],
+  },
+  {
+    text: 'W czwartek klasa trzecia pojechała na wycieczkę do Krakowa. Najpierw dzieci zwiedziły zamek na Wawelu, a potem zeszły do Smoczej Jamy. Franek trochę się bał, bo w jaskini było ciemno i zimno. Przed jaskinią stał smok z metalu, który co kilka minut zionął prawdziwym ogniem. Na koniec wszyscy zjedli obwarzanki na rynku.',
+    q: [['Kiedy klasa pojechała na wycieczkę?', ['w czwartek', 'w poniedziałek', 'w sobotę']],
+      ['Dlaczego Franek się bał?', ['bo w jaskini było ciemno i zimno', 'bo zgubił swoją grupę', 'bo smok głośno ryczał']],
+      ['Co dzieci zjadły na rynku?', ['obwarzanki', 'lody', 'pierogi']]],
+  },
+  {
+    text: 'Serce to mięsień wielkości zaciśniętej pięści. Pracuje bez przerwy przez całe życie i pompuje krew do każdej części ciała. U dziecka uderza około dziewięćdziesięciu razy na minutę, a podczas biegu jeszcze szybciej. Krew niesie tlen i składniki odżywcze. Żeby serce było silne, potrzebuje ruchu, snu i zdrowego jedzenia.',
+    q: [['Jakiej wielkości jest serce?', ['jak pięść', 'jak głowa', 'jak orzech']],
+      ['Ile razy na minutę uderza serce dziecka?', ['około dziewięćdziesięciu', 'około dwudziestu', 'około trzystu']],
+      ['Co niesie krew?', ['tlen i składniki odżywcze', 'tylko wodę', 'powietrze i światło']]],
+  },
+  {
+    text: 'Kapitan Borys płynął swoim statkiem przez trzy dni i trzy noce. Czwartego dnia zerwał się sztorm i fale zalały pokład. Załoga chciała zawrócić, ale papuga Kleks zauważyła w oddali światło latarni morskiej. Dzięki niej statek bezpiecznie dopłynął do portu. W nagrodę Kleks dostała cały worek orzechów.',
+    q: [['Kiedy zerwał się sztorm?', ['czwartego dnia', 'pierwszego dnia', 'siódmego dnia']],
+      ['Kto zauważył światło latarni?', ['papuga Kleks', 'kapitan Borys', 'kucharz']],
+      ['Co Kleks dostała w nagrodę?', ['worek orzechów', 'złotą monetę', 'nową klatkę']]],
+  },
+  {
+    text: 'Drzewa są najdłużej żyjącymi roślinami na Ziemi. Niektóre dęby rosną ponad tysiąc lat. Wiek ściętego drzewa można policzyć po słojach, czyli kręgach widocznych na pniu: jeden słój to jeden rok. Drzewa wytwarzają tlen, którym oddychamy, i dają schronienie ptakom, owadom i wiewiórkom. Jesienią liście zmieniają kolor, bo drzewo przygotowuje się do zimy.',
+    q: [['Jak policzyć wiek ściętego drzewa?', ['po słojach na pniu', 'po liczbie gałęzi', 'po wysokości']],
+      ['Co wytwarzają drzewa?', ['tlen', 'deszcz', 'wiatr']],
+      ['Ile lat mogą rosnąć niektóre dęby?', ['ponad tysiąc', 'najwyżej sto', 'około dziesięciu']]],
+  },
   {
     text: 'Ola ma małego kota. Kot nazywa się Puszek. Puszek jest szary i ma białe łapki. Codziennie rano pije mleko z niebieskiej miski. Potem śpi na ciepłym parapecie.',
     q: [['Jak nazywa się kot?', ['Puszek', 'Mruczek', 'Filemon']],

@@ -28,9 +28,9 @@ function shuffle(a) {
 const sample = (a, n) => shuffle(a).slice(0, n);
 
 /* ---------- zapis postępów ---------- */
-const STORE = 'madra-sowa-v1';
+const STORE = 'madra-sowa-v2';
 const state = (() => {
-  const base = { stars: 0, mute: false, games: {} };
+  const base = { mute: false, players: [], active: -1 };
   try {
     return Object.assign(base, JSON.parse(localStorage.getItem(STORE)) || {});
   } catch {
@@ -42,7 +42,8 @@ function save() {
     localStorage.setItem(STORE, JSON.stringify(state));
   } catch { /* np. tryb prywatny – gra działa dalej bez zapisu */ }
 }
-const gs = (id) => (state.games[id] ??= { level: 1, plays: 0, best: 0 });
+const me = () => state.players[state.active];
+const gs = (id) => (me().games[id] ??= { level: 1, plays: 0, best: 0 });
 
 /* ---------- dźwięki ---------- */
 let ac;
@@ -70,10 +71,12 @@ function tone(freqs, dur = 0.13) {
 
 // Błysk: słowo pojawia się na chwilę, potem trzeba je wskazać.
 async function flashWords(ctx) {
-  const tier = [1, 1, 2, 2, 3, 3][ctx.level - 1];
-  const time = [1000, 600, 700, 400, 500, 300][ctx.level - 1];
-  const pool = WORDS[tier];
-  const targets = sample(pool, 8);
+  const tier = [2, 3, 3, 4, 5, 5][ctx.level - 1];
+  const time = [600, 500, 250, 500, 600, 350][ctx.level - 1];
+  // poziomy 4–6: całe wyrażenia – ćwiczą obejmowanie wzrokiem kilku słów naraz
+  const groups = tier >= 4 ? sample(PHRASES[tier - 2], 8) : null;
+  const pool = WORDS[tier] || [];
+  const targets = groups ? groups.map((g) => g[rand(g.length)]) : sample(pool, 8);
   let score = 0;
   for (let i = 0; i < targets.length; i++) {
     ctx.progress(i, targets.length);
@@ -85,6 +88,11 @@ async function flashWords(ctx) {
     await ctx.sleep(time);
     box.textContent = '✱✱✱✱✱';
     await ctx.sleep(200);
+    if (groups) {
+      ctx.stage.replaceChildren(h('p', { class: 'hint' }, 'Co tam było napisane?'));
+      if (await ctx.ask(shuffle(groups[i]), word, 'answers')) score++;
+      continue;
+    }
     const sim = (w) => (w[0] === word[0] ? 2 : 0) + (w.at(-1) === word.at(-1) ? 1 : 0) - Math.abs(w.length - word.length);
     const near = pool.filter((w) => w !== word).sort((a, b) => sim(b) - sim(a)).slice(0, 6);
     ctx.stage.replaceChildren(h('p', { class: 'hint' }, 'Jakie to było słowo?'));
@@ -96,8 +104,8 @@ async function flashWords(ctx) {
 // Sylaby: ułóż słowo z rozsypanych sylab.
 async function syllables(ctx) {
   const L = ctx.level;
-  const lens = L <= 2 ? [2] : L <= 4 ? [3] : [3, 4, 5];
-  const extra = [0, 1, 0, 2, 1, 3][L - 1];
+  const lens = L <= 2 ? [3] : [4, 5];
+  const extra = [1, 3, 1, 3, 5, 5][L - 1];
   const items = sample(SYLLABLES.filter((s) => lens.includes(s[1].length)), 6);
   const allSyl = [...new Set(SYLLABLES.flatMap((s) => s[1]))];
   let score = 0;
@@ -107,7 +115,10 @@ async function syllables(ctx) {
     const decoys = sample(allSyl.filter((s) => !syl.includes(s)), extra);
     const slots = h('div', { class: 'slots' }, syl.map(() => h('span', { class: 'slot' })));
     const tiles = h('div', { class: 'options syl' });
-    ctx.stage.replaceChildren(h('div', { class: 'pic' }, pic), slots, tiles);
+    const picture = h('div', { class: 'pic' }, pic);
+    ctx.stage.replaceChildren(picture, slots, tiles);
+    // na najwyższym poziomie obrazek znika – trzeba go zapamiętać
+    if (L === 6) setTimeout(() => (picture.style.visibility = 'hidden'), 1500);
     let pos = 0;
     let clean = true;
     await new Promise((done) => {
@@ -140,13 +151,14 @@ async function syllables(ctx) {
 
 // Czytanie na czas: tekst słowo po słowie, potem pytania.
 async function speedRead(ctx) {
-  const wpm = [50, 70, 90, 120, 160, 200][ctx.level - 1];
+  const wpm = [90, 120, 150, 190, 240, 300][ctx.level - 1];
   const stories = sample(STORIES, 2);
   let score = 0;
   let total = 0;
   let step = 0;
+  const steps = stories.reduce((n, st) => n + 1 + st.q.length, 0);
   for (const story of stories) {
-    ctx.progress(step++, 6);
+    ctx.progress(step++, steps);
     await new Promise((go) => {
       ctx.stage.replaceChildren(
         h('p', { class: 'hint' }, `Słowa będą się pojawiać jedno po drugim (${wpm} słów na minutę). Czytaj uważnie – potem będą pytania!`),
@@ -165,7 +177,7 @@ async function speedRead(ctx) {
       await ctx.sleep(base * (/[.!?]$/.test(words[i]) ? 1.8 : /,$/.test(words[i]) ? 1.3 : 1));
     }
     for (const [question, answers] of story.q) {
-      ctx.progress(step++, 6);
+      ctx.progress(step++, steps);
       ctx.stage.replaceChildren(h('p', { class: 'question' }, question));
       if (await ctx.ask(shuffle(answers), answers[0], 'answers')) score++;
       total++;
@@ -176,9 +188,9 @@ async function speedRead(ctx) {
 
 // Pary: klasyczne szukanie par obrazków.
 async function pairs(ctx) {
-  const n = [3, 4, 6, 8, 10, 12][ctx.level - 1];
+  const n = [6, 8, 10, 12, 15, 18][ctx.level - 1];
   const cards = shuffle(sample(EMOJI, n).flatMap((e) => [e, e]));
-  const cols = cards.length <= 8 ? (cards.length === 6 ? 3 : 4) : cards.length <= 16 ? 4 : cards.length === 20 ? 5 : 6;
+  const cols = cards.length <= 16 ? 4 : cards.length === 20 ? 5 : 6;
   const grid = h('div', { class: 'grid', style: `--cols:${cols}` });
   const info = h('p', { class: 'hint' }, 'Znajdź wszystkie pary!');
   ctx.stage.replaceChildren(info, grid);
@@ -226,7 +238,7 @@ async function pairs(ctx) {
 
 // Kolejność: zapamiętaj ciąg obrazków i odtwórz go.
 async function sequence(ctx) {
-  const len = ctx.level + 2;
+  const len = ctx.level + 3;
   const speed = ctx.level <= 3 ? 900 : 700;
   const rounds = 5;
   let score = 0;
@@ -276,7 +288,7 @@ async function sequence(ctx) {
 
 // Co zniknęło: jeden z obrazków znika.
 async function missing(ctx) {
-  const n = ctx.level + 2;
+  const n = ctx.level + 3;
   const rounds = 6;
   let score = 0;
   for (let r = 0; r < rounds; r++) {
@@ -300,7 +312,7 @@ async function missing(ctx) {
 
 // Liczby: zapamiętaj liczbę i wpisz ją.
 async function numbers(ctx) {
-  const len = ctx.level + 2;
+  const len = ctx.level + 3;
   const rounds = 5;
   let score = 0;
   for (let r = 0; r < rounds; r++) {
@@ -337,10 +349,93 @@ async function numbers(ctx) {
   return { ratio: score / rounds, text: `Zapamiętane liczby (cyfr: ${len}): ${score} z ${rounds}` };
 }
 
+// Tablica liczb: znajdź liczby po kolei, patrząc na środek – poszerza pole widzenia.
+async function numberGrid(ctx) {
+  const size = [3, 4, 4, 5, 5, 5][ctx.level - 1];
+  const perCell = [2, 2, 1.4, 1.8, 1.3, 1][ctx.level - 1];
+  const n = size * size;
+  const keepMarks = ctx.level <= 2;
+  const info = h('p', { class: 'question' }, 'Szukaj: 1');
+  const grid = h('div', { class: 'grid cells', style: `--cols:${size}` });
+  ctx.stage.replaceChildren(h('p', { class: 'hint' }, 'Patrz na środek tablicy i klikaj liczby po kolei.'), info, grid);
+  let next = 1;
+  let slips = 0;
+  const t0 = performance.now();
+  await new Promise((done) => {
+    for (const num of shuffle(Array.from({ length: n }, (_, i) => i + 1))) {
+      const b = h('button', { class: 'cell' }, String(num));
+      b.addEventListener('click', () => {
+        if (num === next) {
+          tone([500 + next * 12], 0.06);
+          if (keepMarks) b.classList.add('hit');
+          ctx.progress(next, n);
+          if (++next > n) done();
+          else info.textContent = `Szukaj: ${next}`;
+        } else if (num > next) {
+          slips++;
+          b.classList.remove('shake');
+          void b.offsetWidth;
+          b.classList.add('shake');
+        }
+      });
+      grid.append(b);
+    }
+  });
+  const t = (performance.now() - t0) / 1000 + slips; // każda pomyłka to sekunda kary
+  const target = n * perCell;
+  const ratio = t <= target ? 1 : t <= target * 1.5 ? 0.7 : 0.45;
+  await ctx.feedback(ratio === 1);
+  return { ratio, text: `Twój czas: ${t.toFixed(1).replace('.', ',')} s (cel: ${Math.round(target)} s)` };
+}
+
+// Lista słów: zapamiętaj listę, potem zaznacz słowa, które na niej były.
+async function wordList(ctx) {
+  const n = ctx.level + 3;
+  const rounds = 3;
+  const pool = [...WORDS[1], ...WORDS[2]];
+  let points = 0;
+  for (let r = 0; r < rounds; r++) {
+    ctx.progress(r, rounds);
+    const words = sample(pool, n * 2);
+    const targets = new Set(words.slice(0, n));
+    ctx.stage.replaceChildren(
+      h('p', { class: 'hint' }, 'Zapamiętaj te słowa! Możesz ułożyć z nich w głowie historyjkę.'),
+      h('div', { class: 'chips' }, [...targets].map((w) => h('span', null, w))));
+    await ctx.sleep(2000 + n * 1500);
+    const tiles = h('div', { class: 'options' });
+    const check = h('button', { class: 'big' }, 'Sprawdź');
+    ctx.stage.replaceChildren(h('p', { class: 'hint' }, `Zaznacz ${n} słów, które były na liście.`), tiles, check);
+    for (const w of shuffle(words)) {
+      tiles.append(h('button', { class: 'opt small', onclick: (e) => e.currentTarget.classList.toggle('sel') }, w));
+    }
+    await new Promise((done) => check.addEventListener('click', done));
+    check.remove();
+    let hits = 0;
+    let wrong = 0;
+    for (const b of tiles.children) {
+      const sel = b.classList.contains('sel');
+      const was = targets.has(b.textContent);
+      b.disabled = true;
+      b.classList.remove('sel');
+      if (sel && was) hits++;
+      if (sel && !was) wrong++;
+      if (was) b.classList.add(sel ? 'good' : 'missed');
+      else if (sel) b.classList.add('wrong');
+    }
+    const got = Math.max(0, hits - wrong);
+    points += got;
+    await ctx.feedback(got === n);
+    await ctx.sleep(got === n ? 400 : 2200);
+  }
+  return { ratio: points / (n * rounds), text: `Zapamiętane słowa: ${points} z ${n * rounds}` };
+}
+
 const GAMES = [
-  { id: 'flash', group: 'Czytanie', icon: '⚡', name: 'Błysk', how: 'Słowo mignie na ekranie tylko na chwilę. Przeczytaj je jednym spojrzeniem i wybierz właściwe.', run: flashWords },
+  { id: 'flash', group: 'Czytanie', icon: '⚡', name: 'Błysk', how: 'Słowo mignie na ekranie tylko na chwilę. Przeczytaj je jednym spojrzeniem i wybierz właściwe. Na wyższych poziomach migają całe wyrażenia!', run: flashWords },
   { id: 'syl', group: 'Czytanie', icon: '🧩', name: 'Sylaby', how: 'Popatrz na obrazek i ułóż jego nazwę z sylab. Klikaj sylaby po kolei.', run: syllables },
   { id: 'read', group: 'Czytanie', icon: '📖', name: 'Czytanie na czas', how: 'Przeczytaj krótką historyjkę, która pojawia się słowo po słowie, i odpowiedz na pytania.', run: speedRead },
+  { id: 'grid', group: 'Czytanie', icon: '🎯', name: 'Tablica liczb', how: 'Znajdź liczby po kolei, od 1 do ostatniej, jak najszybciej. Sztuczka: patrz na środek tablicy i szukaj kątem oka – to poszerza pole widzenia przy czytaniu.', run: numberGrid },
+  { id: 'words', group: 'Pamięć', icon: '📝', name: 'Lista słów', how: 'Zapamiętaj listę słów. Potem wskaż je wśród innych. Pomaga wymyślenie historyjki, która łączy słowa.', run: wordList },
   { id: 'pairs', group: 'Pamięć', icon: '🃏', name: 'Pary', how: 'Odkrywaj po dwie karty i znajdź wszystkie pary w jak najmniejszej liczbie ruchów.', run: pairs },
   { id: 'seq', group: 'Pamięć', icon: '🔢', name: 'Kolejność', how: 'Obrazki pokażą się jeden po drugim. Zapamiętaj kolejność i powtórz ją.', run: sequence },
   { id: 'miss', group: 'Pamięć', icon: '🙈', name: 'Co zniknęło?', how: 'Zapamiętaj obrazki. Jeden z nich zniknie – zgadnij który!', run: missing },
@@ -350,20 +445,56 @@ const GAMES = [
 /* ---------- ekrany ---------- */
 let current = null; // znacznik trwającej gry; zmiana ekranu ją przerywa
 
+function who() {
+  current = null;
+  const input = h('input', { type: 'text', maxlength: '14', placeholder: 'Imię', 'aria-label': 'Imię nowego gracza', autocomplete: 'off' });
+  const add = (e) => {
+    e.preventDefault();
+    const name = input.value.trim();
+    if (!name) return;
+    state.players.push({ name, stars: 0, games: {} });
+    state.active = state.players.length - 1;
+    save();
+    home();
+  };
+  app.replaceChildren(
+    h('header', { class: 'top' }, h('h1', null, '🦉 Mądra Sowa')),
+    h('div', { class: 'panel' },
+      h('p', { class: 'how' }, state.players.length ? 'Kto teraz gra?' : 'Cześć! Jak masz na imię?'),
+      state.players.map((p, i) => h('div', { class: 'player' },
+        h('button', { class: 'big', onclick: () => { state.active = i; save(); home(); } }, `${p.name}  ⭐ ${p.stars}`),
+        h('button', {
+          class: 'icon',
+          'aria-label': `Usuń gracza ${p.name}`,
+          onclick: () => {
+            if (!confirm(`Usunąć gracza ${p.name} i wszystkie jego gwiazdki?`)) return;
+            state.players.splice(i, 1);
+            state.active = -1;
+            save();
+            who();
+          },
+        }, '✕'))),
+      h('form', { class: 'addplayer', onsubmit: add }, input, h('button', { class: 'big ghost', type: 'submit' }, '+ Dodaj gracza')))
+  );
+}
+
 function home() {
   current = null;
+  if (!me()) return who();
   const groups = [...new Set(GAMES.map((g) => g.group))];
   app.replaceChildren(
     h('header', { class: 'top' },
       h('h1', null, '🦉 Mądra Sowa'),
       h('div', { class: 'topright' },
-        h('span', { class: 'stars', title: 'Zebrane gwiazdki' }, `⭐ ${state.stars}`),
+        h('span', { class: 'stars', title: 'Zebrane gwiazdki' }, `⭐ ${me().stars}`),
         h('button', {
           class: 'icon',
           'aria-label': state.mute ? 'Włącz dźwięk' : 'Wyłącz dźwięk',
           onclick: () => { state.mute = !state.mute; save(); home(); },
         }, state.mute ? '🔇' : '🔊'))),
-    h('p', { class: 'lead' }, 'Ćwicz codziennie kilka minut – czytaj szybciej i zapamiętuj więcej!'),
+    h('p', { class: 'lead' },
+      `Cześć, ${me().name}! Ćwicz codziennie kilka minut. `,
+      h('button', { class: 'link', onclick: who }, 'Zmień gracza')),
     ...groups.map((group) => h('section', null,
       h('h2', null, group),
       h('div', { class: 'tiles' }, GAMES.filter((g) => g.group === group).map((g) => {
@@ -458,7 +589,7 @@ async function play(g) {
   else if (result.ratio < 0.4) s.level = Math.max(1, s.level - 1);
   s.plays++;
   s.best = Math.max(s.best, stars);
-  state.stars += stars;
+  me().stars += stars;
   save();
   if (stars) tone([523, 659, 784, 1047], 0.16);
 

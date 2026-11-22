@@ -261,3 +261,39 @@ h2 { margin: 18px 0 10px; font-size: 1.15rem; color: var(--main-dark); text-tran
 @media (prefers-reduced-motion: reduce) {
   .fb, .shake { animation-duration: .01s; }
 }
+
+/* ---------- gracze ---------- */
+.player { display: flex; align-items: center; gap: 10px; }
+.player .icon { background: var(--bg); font-size: 1rem; }
+.addplayer { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 8px; }
+.addplayer input {
+  font: inherit;
+  font-size: 1.2rem;
+  width: 200px;
+  padding: 14px 18px;
+  border: 3px solid #dcd4ff;
+  border-radius: 999px;
+  color: var(--ink);
+}
+.addplayer .big { min-width: 0; }
+.link { background: none; padding: 0; color: var(--main-dark); font-weight: 700; text-decoration: underline; }
+
+/* ---------- tablica liczb ---------- */
+.grid.cells { max-width: 440px; gap: 6px; }
+.cell {
+  aspect-ratio: 1;
+  padding: 0;
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 3px 0 #dcd4ff;
+  font-size: clamp(1.3rem, 6vw, 2rem);
+  font-weight: 800;
+}
+.cell.hit { background: #e9f9f1; color: #9ac9b1; box-shadow: none; }
+
+/* ---------- lista słów ---------- */
+.chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.chips span { padding: 10px 18px; background: var(--card); border-radius: 14px; box-shadow: 0 4px 0 #dcd4ff; font-size: 1.5rem; font-weight: 700; }
+.opt.small { min-height: 52px; font-size: 1.2rem; padding: 8px 10px; }
+.opt.sel { background: var(--sun); box-shadow: 0 5px 0 #d9a51c; }
+.opt.missed { outline: 4px dashed var(--good); outline-offset: -4px; }
