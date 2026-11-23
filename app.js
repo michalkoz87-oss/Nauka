@@ -2,7 +2,7 @@
 
 /* ---------- pomocnicze ---------- */
 const app = document.getElementById('app');
-const MAX_LEVEL = 6;
+const MAX_LEVEL = 10;
 const CANCEL = Symbol('cancel');
 
 function h(tag, props, ...kids) {
@@ -77,9 +77,9 @@ addEventListener('pointerdown', () => {
 
 // Błysk: słowo pojawia się na chwilę, potem trzeba je wskazać.
 async function flashWords(ctx) {
-  const tier = [2, 3, 3, 4, 5, 5][ctx.level - 1];
-  const time = [600, 500, 250, 500, 600, 350][ctx.level - 1];
-  // poziomy 4–6: całe wyrażenia – ćwiczą obejmowanie wzrokiem kilku słów naraz
+  const tier = [2, 3, 3, 4, 5, 5, 5, 6, 6, 6][ctx.level - 1];
+  const time = [600, 500, 250, 500, 600, 350, 250, 600, 400, 280][ctx.level - 1];
+  // od poziomu 4: całe wyrażenia (2, 3, a od poziomu 8 – 4 słowa) – ćwiczą obejmowanie wzrokiem kilku słów naraz
   const groups = tier >= 4 ? sample(PHRASES[tier - 2], 8) : null;
   const pool = WORDS[tier] || [];
   const targets = groups ? groups.map((g) => g[rand(g.length)]) : sample(pool, 8);
@@ -110,8 +110,9 @@ async function flashWords(ctx) {
 // Sylaby: ułóż słowo z rozsypanych sylab.
 async function syllables(ctx) {
   const L = ctx.level;
-  const lens = [[2, 3], [2, 3], [3, 4], [3, 4], [4, 5], [4, 5]][L - 1];
-  const extra = [1, 3, 1, 3, 5, 5][L - 1];
+  const lens = [[2, 3], [2, 3], [3, 4], [3, 4], [4, 5], [4, 5]][L - 1] || [4, 5];
+  const extra = [1, 3, 1, 3, 5, 5, 6, 6, 7, 7][L - 1];
+  const hideAfter = [0, 0, 0, 0, 0, 1500, 1500, 1000, 1000, 600][L - 1];
   const items = sample(SYLLABLES.filter((s) => lens.includes(s[1].length)), 6);
   const allSyl = [...new Set(SYLLABLES.flatMap((s) => s[1]))];
   let score = 0;
@@ -123,8 +124,8 @@ async function syllables(ctx) {
     const tiles = h('div', { class: 'options syl' });
     const picture = h('div', { class: 'pic' }, pic);
     ctx.stage.replaceChildren(picture, slots, tiles);
-    // na najwyższym poziomie obrazek znika – trzeba go zapamiętać
-    if (L === 6) setTimeout(() => (picture.style.visibility = 'hidden'), 1500);
+    // na wyższych poziomach obrazek znika coraz szybciej – trzeba go zapamiętać
+    if (hideAfter) setTimeout(() => (picture.style.visibility = 'hidden'), hideAfter);
     let pos = 0;
     let clean = true;
     await new Promise((done) => {
@@ -157,7 +158,7 @@ async function syllables(ctx) {
 
 // Czytanie na czas: tekst słowo po słowie, potem pytania.
 async function speedRead(ctx) {
-  const wpm = [90, 120, 150, 190, 240, 300][ctx.level - 1];
+  const wpm = [90, 120, 150, 190, 240, 300, 350, 400, 450, 500][ctx.level - 1];
   // jedna krótsza i jedna dłuższa czytanka: zawsze 5 pytań, więc jedna pomyłka nie blokuje awansu
   const stories = shuffle([2, 3].map((k) => sample(STORIES.filter((st) => st.q.length === k), 1)[0]));
   let score = 0;
@@ -197,9 +198,12 @@ async function speedRead(ctx) {
 
 // Pary: klasyczne szukanie par obrazków.
 async function pairs(ctx) {
-  const n = [6, 8, 10, 12, 15, 18][ctx.level - 1];
+  const n = [6, 8, 10, 12, 15, 18, 20, 21, 24, 28][ctx.level - 1];
   const cards = shuffle(sample(EMOJI, n).flatMap((e) => [e, e]));
-  const cols = cards.length <= 16 ? 4 : cards.length === 20 ? 5 : 6;
+  // na szerokim ekranie więcej kolumn, na wysokim – więcej rzędów, żeby plansza mieściła się bez przewijania
+  const N = cards.length;
+  const wide = innerWidth > innerHeight;
+  const cols = N <= 16 ? 4 : N <= 20 ? 5 : N <= 36 ? 6 : wide ? (N <= 42 ? 7 : 8) : (N === 40 ? 5 : N <= 48 ? 6 : 7);
   const grid = h('div', { class: 'grid', style: `--cols:${cols}` });
   const info = h('p', { class: 'hint' }, 'Znajdź wszystkie pary!');
   ctx.stage.replaceChildren(info, grid);
@@ -247,13 +251,13 @@ async function pairs(ctx) {
 
 // Kolejność: zapamiętaj ciąg obrazków i odtwórz go.
 async function sequence(ctx) {
-  const len = ctx.level + 3;
-  const speed = ctx.level <= 3 ? 900 : 700;
+  const len = [4, 5, 6, 7, 8, 9, 9, 10, 10, 11][ctx.level - 1];
+  const speed = [900, 900, 900, 700, 700, 700, 550, 550, 450, 450][ctx.level - 1];
   const rounds = 5;
   let score = 0;
   for (let r = 0; r < rounds; r++) {
     ctx.progress(r, rounds);
-    const palette = sample(EMOJI, ctx.level <= 3 ? 6 : 9);
+    const palette = sample(EMOJI, ctx.level <= 3 ? 6 : ctx.level <= 6 ? 9 : 12);
     const seq = Array.from({ length: len }, () => palette[rand(palette.length)]);
     const box = h('div', { class: 'flash emoji' }, '');
     ctx.stage.replaceChildren(h('p', { class: 'hint' }, 'Zapamiętaj kolejność!'), box);
@@ -297,7 +301,8 @@ async function sequence(ctx) {
 
 // Co zniknęło: jeden z obrazków znika.
 async function missing(ctx) {
-  const n = ctx.level + 3;
+  const n = [4, 5, 6, 7, 8, 9, 10, 11, 12, 12][ctx.level - 1];
+  const perItem = [600, 600, 600, 600, 600, 600, 500, 450, 400, 350][ctx.level - 1];
   const rounds = 6;
   let score = 0;
   for (let r = 0; r < rounds; r++) {
@@ -306,7 +311,7 @@ async function missing(ctx) {
     const gone = items[rand(n)];
     const row = h('div', { class: 'row' }, items.map((e) => h('span', null, e)));
     ctx.stage.replaceChildren(h('p', { class: 'hint' }, 'Zapamiętaj wszystkie obrazki!'), row);
-    await ctx.sleep(1500 + n * 600);
+    await ctx.sleep(1500 + n * perItem);
     row.replaceChildren(h('span', null, '🙈'));
     await ctx.sleep(800);
     const rest = items.filter((e) => e !== gone);
@@ -321,16 +326,17 @@ async function missing(ctx) {
 
 // Liczby: zapamiętaj liczbę i wpisz ją.
 async function numbers(ctx) {
-  const len = ctx.level + 3;
+  const len = [4, 5, 6, 7, 8, 9, 10, 11, 12, 12][ctx.level - 1];
+  const perDigit = [500, 500, 500, 500, 500, 500, 500, 500, 500, 350][ctx.level - 1];
   const rounds = 5;
   let score = 0;
   for (let r = 0; r < rounds; r++) {
     ctx.progress(r, rounds);
     let num = String(1 + rand(9));
     while (num.length < len) num += rand(10);
-    const box = h('div', { class: 'flash digits' }, num);
+    const box = h('div', { class: len > 9 ? 'flash digits long' : 'flash digits' }, num);
     ctx.stage.replaceChildren(h('p', { class: 'hint' }, 'Zapamiętaj liczbę!'), box);
-    await ctx.sleep(1000 + len * 500);
+    await ctx.sleep(1000 + len * perDigit);
     box.textContent = '';
     ctx.stage.firstChild.textContent = 'Wpisz liczbę';
     const pad = h('div', { class: 'pad' });
@@ -374,8 +380,8 @@ async function numbers(ctx) {
 
 // Tablica liczb: znajdź liczby po kolei, patrząc na środek – poszerza pole widzenia.
 async function numberGrid(ctx) {
-  const size = [3, 4, 4, 5, 5, 5][ctx.level - 1];
-  const perCell = [2, 2, 1.4, 1.8, 1.3, 1][ctx.level - 1];
+  const size = [3, 4, 4, 5, 5, 5, 6, 6, 7, 7][ctx.level - 1];
+  const perCell = [2, 2, 1.4, 1.8, 1.3, 1, 1.6, 1.2, 1.4, 1][ctx.level - 1];
   const n = size * size;
   const keepMarks = ctx.level <= 2;
   const info = h('p', { class: 'question' }, 'Szukaj: 1');
@@ -416,7 +422,7 @@ async function numberGrid(ctx) {
 async function wordList(ctx) {
   const n = ctx.level + 3;
   const rounds = 3;
-  const pool = [...WORDS[1], ...WORDS[2]];
+  const pool = [...WORDS[1], ...WORDS[2], ...(ctx.level > 6 ? WORDS[3] : [])];
   const deck = shuffle(pool); // każde słowo najwyżej raz w całej sesji
   let points = 0;
   for (let r = 0; r < rounds; r++) {

@@ -9,7 +9,7 @@ na telefonie, tablecie i komputerze. Nie wymaga instalacji, konta ani internetu 
 **Czytanie**
 - ⚡ **Błysk** – słowo (a na wyższych poziomach całe wyrażenie) miga na ułamek sekundy.
 - 🧩 **Sylaby** – układanie długich słów z rozsypanych sylab wśród zmyłek.
-- 📖 **Czytanie na czas** – tekst słowo po słowie w tempie 90–300 słów na minutę, potem pytania o treść.
+- 📖 **Czytanie na czas** – tekst słowo po słowie w tempie 90–500 słów na minutę, potem pytania o treść.
 - 🎯 **Tablica liczb** – szukanie liczb po kolei na czas; poszerza pole widzenia.
 
 **Pamięć**
@@ -19,7 +19,7 @@ na telefonie, tablecie i komputerze. Nie wymaga instalacji, konta ani internetu 
 - 🙈 **Co zniknęło?** – który obrazek zniknął?
 - 🔟 **Liczby** – zapamiętywanie coraz dłuższych liczb.
 
-Każda gra ma 6 poziomów. Poziom rośnie sam po dobrym wyniku i spada, gdy jest za trudno;
+Każda gra ma 10 poziomów. Poziom rośnie sam po dobrym wyniku i spada, gdy jest za trudno;
 można go też ustawić ręcznie przed startem. Gwiazdki i poziomy zapisują się na urządzeniu
 (osobno na każdym telefonie czy tablecie).
 

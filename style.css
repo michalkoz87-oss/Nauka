@@ -175,6 +175,7 @@ h2 { margin: 18px 0 10px; font-size: 1.15rem; color: var(--main-dark); text-tran
 .flash.emoji { font-size: 6rem; min-height: 190px; }
 .flash.digits { letter-spacing: .15em; font-variant-numeric: tabular-nums; }
 .flash.typing { min-height: 84px; }
+.flash.digits.long { font-size: clamp(1.3rem, 6.4vw, 3.2rem); letter-spacing: .1em; }
 /* pojedyncze słowa czytanki i całe wyrażenia muszą się mieścić w jednej linii także na telefonie */
 .flash.read { font-size: clamp(1.5rem, 7vw, 3.5rem); letter-spacing: 0; }
 .flash.phrase { font-size: clamp(1.15rem, 5.6vw, 3rem); white-space: nowrap; letter-spacing: 0; }

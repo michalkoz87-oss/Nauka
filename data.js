@@ -81,6 +81,20 @@ const PHRASES = {
     ['koń biegnie łąką', 'koń biegnie drogą', 'koń biega łąką', 'kot biegnie łąką'],
     ['słońce mocno grzeje', 'słońce mocno świeci', 'słonko mocno grzeje', 'słońce słabo grzeje'],
   ],
+  4: [
+    ['mój kot lubi mleko', 'mój kot pije mleko', 'mój pies lubi mleko', 'twój kot lubi mleko'],
+    ['mama ma nowy rower', 'mama ma stary rower', 'tata ma nowy rower', 'mama ma nowy robot'],
+    ['pies śpi pod stołem', 'pies śpi pod płotem', 'kot śpi pod stołem', 'pies je pod stołem'],
+    ['w lesie rosną grzyby', 'w lesie rosną dęby', 'w lesie rosły grzyby', 'w lecie rosną grzyby'],
+    ['Ola idzie do szkoły', 'Ola idzie do sklepu', 'Ala idzie do szkoły', 'Ola jedzie do szkoły'],
+    ['na stole leży chleb', 'na stole leży klucz', 'na stole stoi chleb', 'na stołku leży chleb'],
+    ['tata kupił dwa bilety', 'tata kupił trzy bilety', 'tata zgubił dwa bilety', 'tata kupił dwa balony'],
+    ['ptaki lecą na wschód', 'ptaki lecą na zachód', 'ptaki wracają na wschód', 'raki idą na wschód'],
+    ['dziś pada zimny deszcz', 'dziś pada ciepły deszcz', 'dziś pada zimny śnieg', 'dziś padał zimny deszcz'],
+    ['kot wszedł na drzewo', 'kot wszedł na krzesło', 'pies wszedł na drzewo', 'kot wskoczył na drzewo'],
+    ['mała mysz zjadła ser', 'mała mysz zgubiła ser', 'biała mysz zjadła ser', 'mała mysz zjadła sen'],
+    ['brat czyta mi bajkę', 'brat czyta mi książkę', 'brat pisze mi bajkę', 'tata czyta mi bajkę'],
+  ],
 };
 
 // Czytanki: tekst + pytania. Pierwsza odpowiedź jest zawsze poprawna (gra je miesza).
