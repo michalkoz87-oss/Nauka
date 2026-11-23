@@ -494,8 +494,18 @@ function who() {
         h('button', {
           class: 'icon',
           'aria-label': `Usuń gracza ${p.name}`,
-          onclick: () => {
-            if (!confirm(`Usunąć profil „${p.name}” i wszystkie zebrane gwiazdki?`)) return;
+          onclick: (e) => {
+            // potwierdzenie drugim stuknięciem (okienka systemowe nie wszędzie działają)
+            const btn = e.currentTarget;
+            if (!btn.classList.contains('sure')) {
+              btn.classList.add('sure');
+              btn.textContent = 'Usuń?';
+              setTimeout(() => {
+                btn.classList.remove('sure');
+                btn.textContent = '✕';
+              }, 3000);
+              return;
+            }
             state.players.splice(i, 1);
             state.active = -1;
             save();

@@ -275,6 +275,7 @@ h2 { margin: 18px 0 10px; font-size: 1.15rem; color: var(--main-dark); text-tran
 /* ---------- gracze ---------- */
 .player { display: flex; align-items: center; gap: 10px; }
 .player .icon { background: var(--bg); font-size: 1rem; }
+.player .icon.sure { width: auto; padding: 0 14px; border-radius: 999px; background: var(--bad); color: #fff; box-shadow: none; }
 .addplayer { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 8px; }
 .addplayer input {
   font: inherit;
